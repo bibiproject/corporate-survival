@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>職場訊息斷層 — NexaCorp Workspace</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sidebar: #171A23;
+    --sidebar-active: #2B3040;
+    --sidebar-text: #A9AEC0;
+    --sidebar-text-dim: #6D7286;
+    --main-bg: #F4F5F7;
+    --bubble-them: #FFFFFF;
+    --bubble-me: #2F6FEF;
+    --accent: #2F6FEF;
+    --accent-soft: #E8F0FF;
+    --border: #E4E6EB;
+    --ink: #1B1E28;
+    --ink-soft: #6B7080;
+    --success: #1AA36A;
+    --warn: #E0862A;
+    --danger: #E14C4C;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100vh;
+    font-family:'Noto Sans TC', sans-serif;
+    background: var(--main-bg);
+    color: var(--ink);
+    overflow:hidden;
+  }
+  .app{ display:flex; height:100vh; max-width:1000px; margin:0 auto; box-shadow:0 0 0 1px var(--border); background:#fff; }
+  .sidebar{ width:230px; flex-shrink:0; background:var(--sidebar); color:var(--sidebar-text); display:flex; flex-direction:column; padding:14px 0; overflow-y:auto; }
+  .ws-name{ font-weight:700; font-size:0.95rem; color:#fff; padding:4px 16px 14px; display:flex; align-items:center; gap:8px; }
+  .ws-name .dot{ width:8px;height:8px;border-radius:50%; background:var(--success); }
+  .sb-section{ font-size:0.66rem; letter-spacing:0.5px; color:var(--sidebar-text-dim); padding:10px 16px 4px; text-transform:uppercase; font-weight:700; }
+  .sb-item{ display:flex; align-items:center; gap:8px; padding:6px 16px; font-size:0.8rem; color:var(--sidebar-text); cursor:pointer; transition:background 0.12s; }
+  .sb-item:hover{ background:rgba(255,255,255,0.06); border-radius:0 20px 20px 0; margin-right:10px; }
+  .sb-item.active{ background:var(--sidebar-active); color:#fff; border-radius:0 20px 20px 0; margin-right:10px; }
+  .sb-avatar{ width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:700; color:#fff; flex-shrink:0; }
+  .sb-item .hash{ width:22px; text-align:center; color:var(--sidebar-text-dim); font-weight:700; }
+
+  .main{ flex:1; display:flex; flex-direction:column; min-width:0; }
+  .topbar{ padding:12px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  .topbar .who{ display:flex; align-items:center; gap:10px; }
+  .topbar .who .name{ font-weight:700; font-size:0.95rem; }
+  .topbar .who .sub{ font-size:0.72rem; color:var(--ink-soft); }
+  .daybox{ text-align:right; }
+  .daybox .label{ font-size:0.7rem; color:var(--ink-soft); font-weight:600; }
+  .progress-track{ width:140px; height:5px; background:#E9EBF0; border-radius:3px; margin-top:4px; overflow:hidden; }
+  .progress-fill{ height:100%; background:var(--accent); border-radius:3px; transition:width 0.5s ease; }
+
+  .log{ flex:1; overflow-y:auto; padding:18px 22px; display:flex; flex-direction:column; gap:4px; transition:opacity 0.15s ease; }
+  .log.switching{ opacity:0; }
+  .thread-divider{ align-self:center; font-size:0.68rem; color:var(--ink-soft); background:#EDEFF3; padding:3px 12px; border-radius:20px; margin:6px 0 10px; }
+
+  .msg-row{ display:flex; gap:10px; max-width:82%; animation: rise 0.28s ease; }
+  .msg-row.them{ align-self:flex-start; }
+  .msg-row.me{ align-self:flex-end; flex-direction:row-reverse; }
+  @keyframes rise{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+  .msg-avatar{ width:32px; height:32px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; color:#fff; margin-top:2px; }
+  .msg-body{ display:flex; flex-direction:column; }
+  .msg-meta{ font-size:0.72rem; color:var(--ink-soft); margin-bottom:3px; display:flex; gap:6px; }
+  .msg-row.me .msg-meta{ justify-content:flex-end; }
+  .msg-meta .nm{ font-weight:700; color:var(--ink); }
+  .bubble{ background:var(--bubble-them); border:1px solid var(--border); padding:9px 13px; border-radius:4px 14px 14px 14px; font-size:0.88rem; line-height:1.6; box-shadow:0 1px 2px rgba(0,0,0,0.03); white-space:pre-line; }
+  .msg-row.me .bubble{ background:var(--bubble-me); color:#fff; border:none; border-radius:14px 4px 14px 14px; }
+
+  .typing-row{ display:flex; gap:10px; align-items:center; }
+  .typing-dots{ background:var(--bubble-them); border:1px solid var(--border); padding:10px 14px; border-radius:4px 14px 14px 14px; display:flex; gap:4px; }
+  .typing-dots span{ width:6px; height:6px; border-radius:50%; background:#B7BBC6; animation:bounce 1.1s infinite; }
+  .typing-dots span:nth-child(2){ animation-delay:0.15s; }
+  .typing-dots span:nth-child(3){ animation-delay:0.3s; }
+  @keyframes bounce{ 0%,60%,100%{transform:translateY(0); opacity:0.5;} 30%{transform:translateY(-4px); opacity:1;} }
+
+  .read-receipt{ align-self:flex-end; font-size:0.66rem; color:var(--ink-soft); margin:-2px 4px 8px 0; }
+  .narration{ align-self:center; max-width:90%; background:rgba(255,255,255,0.55); border:1px dashed #C7CBD6; color:var(--ink-soft); font-style:italic; font-size:0.78rem; line-height:1.7; padding:9px 16px; border-radius:10px; text-align:center; margin:8px 0; }
+  .call-notif{ align-self:center; display:flex; align-items:center; gap:6px; background:#EEF0F4; color:var(--ink-soft); font-size:0.72rem; padding:6px 14px; border-radius:20px; margin:6px 0; }
+  .call-notif .icon{ color:var(--accent); }
+  .screenshot-card{ width:220px; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:#fff; cursor:zoom-in; }
+  .screenshot-card .ss-fake{ background:linear-gradient(135deg,#EEF1F6,#DDE3EC); height:110px; display:flex; align-items:center; justify-content:center; color:#9AA3B2; font-size:0.68rem; }
+  .screenshot-card .ss-caption{ padding:6px 10px; font-size:0.7rem; color:var(--ink-soft); border-top:1px solid var(--border); }
+  .lightbox{ display:none; position:fixed; inset:0; background:rgba(10,12,20,0.72); align-items:center; justify-content:center; z-index:60; cursor:zoom-out; padding:20px; }
+  .lightbox.show{ display:flex; }
+  .lightbox-inner{ background:#fff; border-radius:14px; padding:16px; width:340px; max-width:100%; }
+  .lightbox-inner .ss-caption{ white-space:pre-line; font-size:0.8rem; line-height:1.7; color:var(--ink); padding-top:10px; }
+  .silence-pad{ align-self:center; height:38px; display:flex; align-items:center; justify-content:center; color:#C4C9D3; font-size:0.72rem; letter-spacing:2px; }
+
+  .choices{ padding:6px 22px 18px; display:flex; flex-direction:column; gap:8px; flex-shrink:0; border-top:1px solid var(--border); }
+  .choices .prompt{ font-size:0.72rem; color:var(--ink-soft); font-weight:600; margin:8px 0 2px; }
+  .choice-btn{ text-align:left; background:#fff; border:1.5px solid var(--border); border-radius:10px; padding:10px 14px; font-size:0.86rem; color:var(--ink); cursor:pointer; font-family:inherit; transition:border-color 0.15s, background 0.15s, transform 0.08s; }
+  .choice-btn:hover{ border-color:var(--accent); background:var(--accent-soft); transform:translateY(-1px); }
+  .choice-btn:disabled{ opacity:0.4; pointer-events:none; }
+  .choices.hidden{ display:none; }
+
+  .continue-wrap{ padding:10px 22px 20px; border-top:1px solid var(--border); flex-shrink:0; }
+  .continue-btn{ width:100%; background:var(--accent); color:#fff; border:none; padding:12px; border-radius:10px; font-size:0.9rem; font-weight:700; cursor:pointer; font-family:inherit; }
+  .continue-btn:hover{ background:#255dd0; }
+
+  .stats-panel{ display:none; padding:8px 20px; border-top:1px solid var(--border); background:#FAFBFC; flex-wrap:wrap; gap:6px; }
+  .stats-panel.show{ display:flex; }
+  .stats-chip{ font-size:0.66rem; color:var(--ink-soft); background:#EEF0F4; padding:3px 9px; border-radius:10px; }
+
+  .overlay{ display:none; position:fixed; inset:0; background:rgba(10,12,20,0.55); align-items:center; justify-content:center; z-index:50; }
+  .overlay.show{ display:flex; }
+  .notif-card{ width:400px; max-width:90vw; background:#fff; border-radius:16px; box-shadow:0 24px 60px rgba(0,0,0,0.35); overflow:hidden; animation:notifIn 0.4s cubic-bezier(.2,1,.3,1); }
+  @keyframes notifIn{ from{opacity:0; transform:translateY(-14px) scale(0.97);} to{opacity:1; transform:none;} }
+  .notif-head{ display:flex; align-items:center; gap:10px; padding:14px 16px 10px; }
+  .notif-app-icon{ width:34px; height:34px; border-radius:9px; background:var(--accent); color:#fff; font-weight:900; font-size:0.85rem; display:flex; align-items:center; justify-content:center; }
+  .notif-app-name{ font-size:0.78rem; font-weight:700; color:var(--ink); }
+  .notif-time{ font-size:0.68rem; color:var(--ink-soft); margin-left:auto; }
+  .notif-body{ padding:0 16px 6px; }
+  .notif-title{ font-size:0.95rem; font-weight:700; margin-bottom:4px; }
+  .notif-text{ font-size:0.84rem; line-height:1.75; color:#333; white-space:pre-line; }
+  .notif-quote{ font-size:0.86rem; font-weight:700; color:var(--ink); margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); }
+  .notif-stamp{ display:inline-block; margin:12px 16px 0; font-size:0.7rem; font-weight:800; letter-spacing:1px; padding:3px 10px; border-radius:20px; }
+  .notif-stamp.neutral{ background:#EEF0F4; color:#666; }
+  .notif-stamp.restructure{ background:#FDF0E4; color:var(--warn); }
+  .notif-stamp.promoted{ background:#E3F7ED; color:var(--success); }
+  .notif-stamp.resign{ background:#FCE9E9; color:var(--danger); }
+  .notif-stamp.hidden{ background:#F1EAFB; color:#7B4FDB; }
+  .notif-foot{ padding:16px; }
+  .replay-btn{ width:100%; background:var(--ink); color:#fff; border:none; padding:11px; border-radius:9px; font-size:0.85rem; font-weight:700; cursor:pointer; font-family:inherit; }
+  .replay-btn:hover{ background:#000; }
+
+  ::-webkit-scrollbar{ width:7px; }
+  ::-webkit-scrollbar-thumb{ background:#D6D9E0; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="ws-name"><span class="dot"></span>NexaCorp Workspace</div>
+    <div class="sb-section">頻道</div>
+    <div class="sb-item" id="sb-team" data-contact="team"><span class="hash">#</span>mkt-team</div>
+    <div class="sb-item" id="sb-crossdept" data-contact="crossdept"><span class="hash">#</span>cross-dept-monthly</div>
+    <div class="sb-item" id="sb-leadership" data-contact="leadership"><span class="hash">#</span>mkt-leadership</div>
+    <div class="sb-section">群組</div>
+    <div class="sb-item" id="sb-trio" data-contact="trio"><span class="sb-avatar" style="background:#C99A2E;">👥</span>午餐三人組</div>
+    <div class="sb-section">私訊</div>
+    <div class="sb-item" id="sb-alex" data-contact="alex"><span class="sb-avatar" style="background:#3B4A7A;">AC</span>Alex Chen（HO MKT）</div>
+    <div class="sb-item" id="sb-ken" data-contact="ken"><span class="sb-avatar" style="background:#D97B29;">KW</span>Ken Wu（Senior MKT Lead）</div>
+    <div class="sb-item" id="sb-sophie" data-contact="sophie"><span class="sb-avatar" style="background:#8C5FD6;">SL</span>Sophie Laurent（MKT）</div>
+    <div class="sb-item" id="sb-grace" data-contact="grace"><span class="sb-avatar" style="background:#1AA36A;">GL</span>Grace Lin（MKT）</div>
+    <div class="sb-item" id="sb-leo" data-contact="leo"><span class="sb-avatar" style="background:#2E9AA6;">LT</span>Leo Tan（MKT）</div>
+    <div class="sb-item" id="sb-tom" data-contact="tom"><span class="sb-avatar" style="background:#D64D8A;">TM</span>Tom（MKT）</div>
+    <div class="sb-item" id="sb-joyce" data-contact="joyce"><span class="sb-avatar" style="background:#6B7A99;">JT</span>Joyce Tam（Finance）</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="who">
+        <span class="sb-avatar" id="topAvatar" style="background:#3B4A7A;">AC</span>
+        <div>
+          <div class="name" id="topName">#mkt-team</div>
+          <div class="sub" id="topSub">頻道</div>
+        </div>
+      </div>
+      <div class="daybox">
+        <div class="label" id="dayLabel">DAY 1 / 90</div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:1%;"></div></div>
+      </div>
+    </div>
+
+    <div class="log" id="log"></div>
+    <div class="stats-panel" id="statsPanel"></div>
+
+    <div class="choices" id="choices"></div>
+    <div class="continue-wrap" id="continueWrap" style="display:none;">
+      <button class="continue-btn" id="continueBtn">繼續</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-inner">
+    <div class="ss-fake" style="height:160px; background:linear-gradient(135deg,#EEF1F6,#DDE3EC); display:flex; align-items:center; justify-content:center; color:#9AA3B2; border-radius:8px;">🖼️ 截圖預覽</div>
+    <div class="ss-caption" id="lightboxCaption"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="notif-card">
+    <div class="notif-head">
+      <div class="notif-app-icon">N</div>
+      <div class="notif-app-name" id="notifSender">NexaCorp Workspace</div>
+      <div class="notif-time">Day 90</div>
+    </div>
+    <div class="notif-body">
+      <div class="notif-title" id="notifTitle">90 天後</div>
+      <div class="notif-text" id="notifText"></div>
+      <div class="notif-quote" id="notifQuote"></div>
+    </div>
+    <div class="notif-stamp" id="notifStamp">結果</div>
+    <div class="notif-foot">
+      <button class="replay-btn" id="replayBtn">重新挑戰 90 天</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   狀態
+============================================================ */
+let state = { like:50, wary:0, ken:40, ally:30, ext:0, helpless:0 };
+let routeScore = { A:0, B:0, C:0, D:0 };
+let idx = 0;
+let events = [];
+let routeDecided = null;
+let playCount = 1;
+
+const ME_TITLE = 'MKT Team Lead';
+
+const CONTACTS = {
+  alex:      { name:'Alex Chen',      title:'HO MKT',            sub:'HO MKT · 你的主管',   color:'#3B4A7A', initials:'AC', sb:'sb-alex' },
+  ken:       { name:'Ken Wu',         title:'Senior MKT Lead',    sub:'Alex 身邊的老臣',      color:'#D97B29', initials:'KW', sb:'sb-ken' },
+  sophie:    { name:'Sophie Laurent', title:'MKT',                sub:'MKT Executive',       color:'#8C5FD6', initials:'SL', sb:'sb-sophie' },
+  grace:     { name:'Grace Lin',      title:'MKT',                sub:'MKT Executive',       color:'#1AA36A', initials:'GL', sb:'sb-grace' },
+  leo:       { name:'Leo Tan',        title:'MKT',                sub:'MKT Executive',       color:'#2E9AA6', initials:'LT', sb:'sb-leo' },
+  tom:       { name:'Tom',            title:'MKT',                sub:'MKT Executive',       color:'#D64D8A', initials:'TM', sb:'sb-tom' },
+  joyce:     { name:'Joyce Tam',      title:'Finance',            sub:'Finance · 外部人脈',   color:'#6B7A99', initials:'JT', sb:'sb-joyce' },
+  david:     { name:'David Chen',     title:'Cross-Dept Head',    sub:'跨部門主管',           color:'#B24444', initials:'DC' },
+  team:      { name:'#mkt-team',      title:'頻道',               sub:'頻道 · 全組',          color:'#5B6472', initials:'#',  sb:'sb-team' },
+  trio:      { name:'午餐三人組',      title:'群組',               sub:'你、Leo、Tom',        color:'#C99A2E', initials:'👥', sb:'sb-trio' },
+  crossdept: { name:'#cross-dept-monthly', title:'頻道',          sub:'跨部門月會',           color:'#5B6472', initials:'#',  sb:'sb-crossdept' },
+  leadership:{ name:'#mkt-leadership',title:'頻道',               sub:'管理層頻道',           color:'#5B6472', initials:'#',  sb:'sb-leadership' }
+};
+
+const threads = {};
+Object.keys(CONTACTS).forEach(k => threads[k] = []);
+let currentThread = null;
+
+/* ============================================================
+   共通事件 — 第一章：發現（Day 1–21）＋ 第二章開場（Day 22–35）
+============================================================ */
+const commonEvents = [
+
+  // 場景 1-1：週一早上的郵件（Day 1）
+  {
+    day:1, contact:'team',
+    incoming: [
+      {speaker:'alex',   text:"Hi all，就如上週五我們 align 過的方向，Q3 的 campaign 主軸會從 brand awareness 轉去 conversion-focused。各位請依據這個方向更新手上的 timeline，週三前交給 Ken 彙整。謝謝 🙏"},
+      {speaker:'ken',    text:"Noted，我會整理一個 template 給大家"},
+      {speaker:'sophie', text:"收到！我手上那個 KOL 合作要重新 scope 嗎？"},
+      {speaker:'alex',   text:"對，我們聊過的那個方向，你按那個走就好"}
+    ],
+    interlude: { contact:'tom', exchange:[
+      {side:'me',   text:"喂 上週五有什麼 alignment meeting 嗎？我完全沒印象"},
+      {side:'them', text:"我也沒有??"},
+      {side:'them', text:"我以為是我漏看了 invite"},
+      {side:'me',   text:"我剛 check calendar 沒有任何東西"},
+      {side:'them', text:"⋯"},
+      {side:'them', text:"算了問 Ken 吧"}
+    ]},
+    choices: [
+      { label:"直接在 #mkt-team 問 Alex", sent:"Hi Alex，想 double check 一下，上週五的 alignment 有 meeting notes 嗎？想確保自己沒有 miss 什麼 context 🙏",
+        fx:{like:-5}, route:'C',
+        readByAfterSent:['Alex Chen','Ken Wu','Sophie Laurent','Tom','Leo Tan','Grace Lin'],
+        steps:[
+          {type:'msg', speaker:'ken', text:"不是正式 meeting 啦，就上週五下午 Alex 路過跟我、Sophie 聊了一下大方向。我等下把 key points 丟上來"},
+          {type:'narration', text:"Alex 沒有回覆。Ken 的「等下」最終變成了下午四點才發的三行 bullet point。Sophie 在 Ken 回覆後打了一個 👍，沒有補充任何東西。"}
+        ] },
+      { label:"私訊 Ken 打聽", dm:{contact:'ken'}, sent:"Ken，上週五那個 alignment 是 formal meeting 還是 casual chat？我好像沒有收到 invite",
+        fx:{ken:5, helpless:10}, route:'B',
+        steps:[
+          {type:'msg', speaker:'ken', text:"不是 meeting 啦"},
+          {type:'msg', speaker:'ken', text:"就上週五下午 Alex 過來跟我聊了一下 Q3 想法"},
+          {type:'msg', speaker:'ken', text:"她叫我之後跟 team sync，但我週末忘了 sorry"},
+          {type:'msg', speaker:'ken', text:"方向大概就是 email 寫的那樣，conversion first，品牌的東西先 hold"},
+          {type:'msg', speaker:'ken', text:"你先按你的理解做，我到時再 review"}
+        ] },
+      { label:"不問，直接照字面做", dm:{contact:'ken'}, sent:"（沒有多問，直接按字面理解開始做 timeline）",
+        fx:{helpless:5}, route:'D',
+        steps:[
+          {type:'narration', text:"（Day 3）你把 timeline 整理好，附件傳給了 Ken。"},
+          {type:'msg', speaker:'ken', text:"收到，我看看"},
+          {type:'narration', text:"（Day 5，週五）"},
+          {type:'msg', speaker:'ken', text:"Hey 我看了一下，方向大致 OK，但 Alex 的意思比較偏 CRM 和 lifecycle 那邊，不是 paid media"},
+          {type:'msg', speaker:'ken', text:"你可以調一下嗎？下週一給我"},
+          {type:'narration', text:"浪費了三天做了一個方向錯誤的東西。「CRM 和 lifecycle」這個關鍵字，上週五 Alex 跟 Ken 聊天時就已經存在了。"}
+        ] },
+      { label:"私訊 Alex 約 sync", dm:{contact:'alex'}, sent:"Hi Alex 早！想約個 15 分鐘 quick sync，確認一下 Q3 方向的細節，方便嗎？",
+        fx:{like:5, helpless:20}, route:'A',
+        steps:[
+          {type:'narration', text:"[已讀]"},
+          {type:'msg', speaker:'alex', text:"好啊，你看一下我 calendar 找個空檔"},
+          {type:'narration', text:"她的 calendar 未來兩週幾乎全滿。唯一的空檔是下週四下午五點半。"},
+          {type:'narration', text:"（Day 11，sync 之後）"},
+          {type:'msg', speaker:'alex', text:"你就先按你的理解做吧，方向不會差太多的。有什麼問題隨時問 Ken，他比較清楚 day-to-day 的細節。"},
+          {type:'msg', speaker:'alex', text:"還有其他嗎？"},
+          {type:'narration', text:"17 分鐘。什麼具體資訊都沒拿到。她把你導回了 Ken。"}
+        ] }
+    ]
+  },
+
+  // 場景 1-2：茶水間（Day 4）
+  {
+    day:4, contact:'ken',
+    incoming: [
+      {speaker:'ken', text:"你上次 timeline 改好了沒？"},
+      {side:'me', text:"改好了，按 CRM 方向重做了。"},
+      {speaker:'ken', text:"嗯，Alex 最近比較⋯⋯你知道的。David 那邊一直在挑她東西，所以她有時候溝通比較 fragmentary，別 take it personally。"}
+    ],
+    choices: [
+      { label:"試探她對你的看法", sent:"你覺得她對我的 performance 有什麼看法嗎？她好像沒怎麼直接 feedback 過我。",
+        fx:{helpless:5, ken:5}, route:null,
+        steps:[
+          {type:'msg', speaker:'ken', text:"她沒有特別說什麼欸⋯⋯沒有說不好。"},
+          {type:'msg', speaker:'ken', text:"你就⋯⋯keep doing what you're doing。她如果有問題會說的。"}
+        ] },
+      { label:"拉近關係，約吃飯", sent:"辛苦你了，夾在中間。改天一起吃個飯？",
+        fx:{ken:3}, route:'A',
+        steps:[
+          {type:'msg', speaker:'ken', text:"好啊，改天。"},
+          {type:'narration', text:"那個「改天」不會發生。"}
+        ] },
+      { label:"直接要求以後先說一聲", sent:"那你可以之後有大方向改動的時候，順手跟我說一聲嗎？省得我做白工。",
+        fx:{ken:5}, route:'B',
+        steps:[
+          {type:'msg', speaker:'ken', text:"⋯⋯呃，好啊，我盡量。有時候也不是正式決定，就是她隨口說一句，然後我過兩天才發現她認真的⋯⋯"},
+          {type:'msg', speaker:'ken', text:"我也不是每次都知道。"}
+        ] },
+      { label:"保持距離", sent:"了解。",
+        fx:{}, route:'D',
+        steps:[ {type:'narration', text:"什麼也沒有發生。但他提到了 David——他選擇透露了這件事。"} ] }
+    ]
+  },
+
+  // 場景 1-3：隱藏群組（Day 5）
+  {
+    day:5, contact:'grace',
+    incoming: [
+      {speaker:'grace', text:"你知道有這個群嗎"},
+      {screenshot:"MKT - Core Planning · 3 位成員", speaker:'grace',
+        caption:"群組：MKT - Core Planning\n成員：Alex Chen, Ken Wu, Sophie Laurent（3人）\n\nAlex：下週二那個提案，你們覺得要不要讓 Tom 做 presenter？\nKen：可以吧，但他可能需要你 briefing 一下 context\nAlex：你幫我跟他說大方向就好\nSophie：那 [你] 呢？他那部分要怎麼處理\nAlex：他先 focus 手上的就好，不用加東西給他了"},
+      {speaker:'grace', text:"Sophie 上廁所沒鎖手機，我瞄到的"},
+      {speaker:'grace', text:"我不在裡面，你也不在，Tom、Leo 也不在"},
+      {speaker:'grace', text:"只有他們三個"}
+    ],
+    choices: [
+      { label:"冷靜分析", sent:"⋯⋯所以所有方向都是在這裡面決定的。難怪我們永遠是最後知道的。", fx:{ally:15, helpless:15}, route:null,
+        steps:[{type:'narration', text:"不論你選什麼，事實已經攤在面前了。那個群組叫「Core Planning」。你是 MKT team 的一員。但你不在 Core 裡面。"}] },
+      { label:"情緒反應", sent:"WTF", fx:{ally:15, helpless:15}, route:null,
+        steps:[{type:'narration', text:"不論你選什麼，事實已經攤在面前了。那個群組叫「Core Planning」。你是 MKT team 的一員。但你不在 Core 裡面。"}] },
+      { label:"叫 Grace 小心", sent:"你小心，別讓 Sophie 知道你看到了", fx:{ally:15, helpless:15}, route:null,
+        steps:[{type:'narration', text:"不論你選什麼，事實已經攤在面前了。那個群組叫「Core Planning」。你是 MKT team 的一員。但你不在 Core 裡面。"}] },
+      { label:"決定行動", sent:"我要想想怎麼處理這件事。", fx:{ally:15, helpless:15}, route:null,
+        steps:[{type:'narration', text:"不論你選什麼，事實已經攤在面前了。那個群組叫「Core Planning」。你是 MKT team 的一員。但你不在 Core 裡面。"}] }
+    ]
+  },
+
+  // 場景 2-1：月度 Review（Day 22）
+  {
+    day:22, contact:'alex', sub_override:"1-on-1 · 月度 Review",
+    incoming: [
+      {speaker:'alex', text:"你這個月的 output 我看了。整體⋯⋯OK。但我有個感覺——你的方向有時候跟 team 的 big picture 有一點 disconnect。"},
+      {speaker:'alex', text:"比如上次那個 timeline，你第一版做的是 paid media 方向⋯⋯我們很早就決定走 CRM 了。"}
+    ],
+    choices: [
+      { label:"忍住，不解釋", sent:"了解，我會更注意 align 大方向。", fx:{like:5, helpless:10}, route:'A',
+        steps:[{type:'msg', speaker:'alex', text:"嗯。很好，繼續保持。"}] },
+      { label:"禮貌地指出資訊落差", sent:"想確認一下——CRM 方向是什麼時候正式決定的？我記得我是在交了 first draft 之後，才從 Ken 那邊收到這個 input 的。",
+        fx:{like:-10, wary:10, helpless:25}, route:'C',
+        steps:[
+          {type:'msg', speaker:'alex', text:"⋯⋯嗯，這個是⋯⋯我記得在 email 裡面有提過。可能你太忙沒注意到？"},
+          {type:'msg', speaker:'alex', text:"Anyway，這不是大問題，下次如果不確定，你隨時問 Ken 就好。"}
+        ] },
+      { label:"主動要求更多 access", sent:"我理解。為了避免以後有這種 disconnect，我可以加入 core planning 的討論嗎？或者有 meeting notes 可以同步給我？",
+        fx:{wary:15, helpless:20}, route:'C',
+        steps:[
+          {type:'msg', speaker:'alex', text:"⋯⋯core planning？沒有什麼 formal 的 planning 啦，就是我平時跟 Ken 他們隨口聊聊。你要是想更 involved，我們可以⋯⋯看怎麼安排。"},
+          {type:'narration', text:"她不會安排的。「看怎麼安排」優雅地拒絕了你。"}
+        ] },
+      { label:"轉移話題", sent:"明白。那你對我下個月的 focus 有什麼具體期待嗎？", fx:{}, route:'D',
+        steps:[{type:'msg', speaker:'alex', text:"嗯⋯⋯你就 focus 在手上的 campaign execution 就好。Q4 plan 我們到時候再 align。"}] }
+    ]
+  },
+
+  // 場景 2-2：David 的公開挑戰（Day 28）
+  {
+    day:28, contact:'crossdept', sub_override:"跨部門月會",
+    incoming: [
+      {speaker:'david', text:"Alex，你們 Q3 的 campaign budget 比去年增了 30%，但 lead gen 只增了 8%。你可以解釋一下 ROI 的 logic 嗎？"},
+      {speaker:'alex',  text:"呃⋯⋯Q3 我們有一些 brand-building 的投入⋯⋯那些不會直接反映在 lead gen 上面⋯⋯"},
+      {speaker:'david', text:"但你們上個月的 deck 寫的是 conversion-focused strategy？Brand building 是你們當時沒提到的。"},
+      {speaker:'alex',  text:"⋯⋯我們的 approach 是 hybrid 的。Ken 那邊有更詳細的 breakdown⋯⋯"},
+      {speaker:'david', text:"OK，期待看到。"},
+      {narration:"[SYSTEM] Alex Chen 已離線"},
+      {call:"Ken Wu 通話中 — 20:00–20:40"}
+    ],
+    choices: [
+      { label:"找 Ken 問後續，主動幫忙", dm:{contact:'ken'}, sent:"Ken，昨天 David 那個 ROI 問題，我們需要補什麼材料嗎？我可以幫忙整理 data",
+        fx:{helpless:15}, route:null,
+        steps:[
+          {type:'msg', speaker:'ken', text:"不用啦，Alex 說她自己會處理"},
+          {type:'msg', speaker:'ken', text:"你照顧好手上的就好 👍"}
+        ] },
+      { label:"觀察 Alex 明天的狀態", sent:"（先不動，看她明天怎麼處理）", fx:{}, route:null,
+        steps:[
+          {type:'narration', text:"（隔天）"},
+          {type:'msg', speaker:'alex', text:"Hi all，re 昨天月會的 discussion，Q3 wrap-up report 需要提前準備一下。Sophie 你 lead，Ken 配合。其他人照原計劃走就好 👍"},
+          {type:'narration', text:"Sophie lead。不是你。"}
+        ] },
+      { label:"私下接觸 David 陣營", dm:{contact:'joyce'}, sent:"Joyce 有空嗎？想約個 quick lunch",
+        fx:{ext:10}, route:'B',
+        steps:[{type:'msg', speaker:'joyce', text:"好啊，老地方？"}] },
+      { label:"在群組主動提出幫忙", sent:"Hi team，re 昨天月會的 ROI 討論，我剛好手上有一些 campaign performance data 可以做一個 breakdown，如果有需要我可以整理出來 share 給大家 reference 🙏",
+        fx:{wary:5, helpless:15}, route:'A',
+        readByAfterSent:['Alex Chen','Ken Wu','Sophie Laurent','Tom','Leo Tan','Grace Lin'],
+        steps:[
+          {type:'msg', speaker:'ken', text:"Thanks for the initiative 👍 我跟 Alex 確認一下再跟你說"},
+          {type:'narration', text:"三天後，沒有人再提這件事。最終的 ROI breakdown 是 Sophie 做的。"}
+        ] }
+    ]
+  },
+
+  // 場景 2-3：Leo 的爆發（Day 35）
+  {
+    day:35, contact:'trio', sub_override:"午餐三人組",
+    incoming: [
+      {speaker:'leo', text:"我今天早上被 Alex 叫去，說我上週的 report 「方向不對」。"},
+      {speaker:'tom', text:"哪裡不對？"},
+      {speaker:'leo', text:"她說 KPI 設定跟 leadership 給的目標不一致。但我那個 KPI 是一個月前她自己 approve 的。"},
+      {speaker:'tom', text:"所以目標改了？"},
+      {speaker:'leo', text:"改了！但沒有人告訴我！我問她什麼時候改的，她說「上週跟 Ken align 過了，你沒有收到嗎？」"},
+      {speaker:'leo', text:"我收到什麼了？什麼都沒收到。"},
+      {speaker:'tom', text:"⋯⋯"}
+    ],
+    choices: [
+      { label:"共情，但保持距離", sent:"我懂⋯⋯我之前 timeline 那次也是一樣的情況。", fx:{ally:8}, route:null,
+        steps:[
+          {type:'msg', speaker:'leo', text:"所以她對你也是這樣？"},
+          {type:'msg', speaker:'tom', text:"⋯⋯我已經習慣了。"}
+        ] },
+      { label:"嘗試集體行動", sent:"你覺得我們三個要不要一起找 Alex 聊一次？正式提出 communication 的問題？", fx:{}, route:null,
+        steps:[
+          {type:'msg', speaker:'tom', text:"⋯⋯一起去？我怕她覺得我們在 gang up on her⋯⋯"},
+          {type:'msg', speaker:'leo', text:"那她覺得就覺得！她本來就有問題！"},
+          {type:'msg', speaker:'tom', text:"但⋯⋯你之前跟前老闆的事⋯⋯"}
+        ],
+        subChoices:[
+          { label:"包裝成 process improvement 提案", sent:"不一定是投訴的方式。我們可以在下一次 team meeting 提出一個 process improvement 建議——比如 shared meeting notes。包裝成效率問題，不是針對她。",
+            fx:{ally:20}, route:'C',
+            steps:[
+              {type:'msg', speaker:'leo', text:"⋯⋯可以試試。"},
+              {type:'msg', speaker:'tom', text:"如果是 process 建議⋯⋯好像比較安全。"}
+            ] },
+          { label:"算了，當我沒說", sent:"算了，當我沒說。各人自己想辦法吧。", fx:{helpless:10}, route:'D', steps:[] }
+        ] },
+      { label:"分析給他聽", sent:"我也還在想。但至少你知道——不是你不夠好。是資訊根本沒到你手上。", fx:{ally:20}, route:'C',
+        steps:[
+          {type:'msg', speaker:'leo', text:"我知道。但知道了又怎樣。"},
+          {type:'msg', speaker:'tom', text:"⋯⋯我已經在看 LinkedIn 了。"}
+        ] },
+      { label:"勸他別衝動", sent:"我理解你很火大。但你先冷靜——現在搞事也不一定有用。", fx:{ally:5, helpless:10}, route:'D',
+        steps:[
+          {type:'msg', speaker:'leo', text:"我怎麼冷靜？每次都是這樣！"},
+          {type:'msg', speaker:'tom', text:"Leo⋯⋯"},
+          {type:'msg', speaker:'leo', text:"⋯⋯好，我不會做傻事，但我真的很 frustrated。"}
+        ] }
+    ]
+  }
+];
+
+/* ============================================================
+   路線分支事件（Day 40 起，依累積傾向動態決定）
+============================================================ */
+function buildRouteEvents(route){
+  if(route === 'A'){
+    return [
+      { day:48, contact:'team', noChoice:false,
+        incoming:[{speaker:'alex', text:"有誰這週有空幫我整理一份 Q3 summary deck？週五要用，比較 urgent 🙏"}],
+        choices:[
+          { label:"立刻接下來", dm:{contact:'alex'}, sent:"我可以！我手上的進度 OK，明天可以 start。需要什麼 format？", fx:{like:15},
+            steps:[
+              {type:'msg', speaker:'alex', text:"太好了，我等下 DM 你 details"},
+              {type:'msg', speaker:'alex', text:"OK 大概需要：Q3 campaign summary, ROI breakdown, Q4 plan preview。Format 你看之前的 template 就好，有什麼問題隨時問我"},
+              {type:'narration', text:"（Day 51，週五）"},
+              {type:'msg', speaker:'alex', text:"Deck 很好，謝謝你🙏 老闆很滿意"},
+              {type:'narration', text:"（Day 55）[SYSTEM] 你已被加入頻道：#mkt-core-planning"}
+            ] },
+          { label:"先確認範圍再接", sent:"我有空，想先確認一下 scope 和你要的 narrative 方向？明天 10 分鐘 quick sync？", fx:{like:8},
+            steps:[
+              {type:'msg', speaker:'alex', text:"好，明天早上 10:00 你找我"},
+              {type:'narration', text:"第二天的 10 分鐘裡，拿到了比過去六週加起來還多的 context。"}
+            ] },
+          { label:"不接，先觀察", sent:"（不回覆，先觀察她最終找了誰）", fx:{like:-3},
+            steps:[
+              {type:'msg', speaker:'alex', text:"@Sophie Laurent 你有空嗎？"},
+              {type:'msg', speaker:'sophie', text:"我這週有點滿⋯⋯但可以試"},
+              {type:'narration', text:"她沒有指定你。你不回覆，她就繞過你。"}
+            ] }
+        ] },
+      { day:90, contact:'leo', noChoice:true,
+        incoming:[
+          {speaker:'leo', text:"欸，下季方向是什麼？Alex 又沒說。"},
+          {narration:"你在 Core Planning 群組裡。你知道答案。"}
+        ] }
+    ];
+  }
+  if(route === 'B'){
+    return [
+      { day:40, contact:'joyce', noChoice:false,
+        incoming:[{speaker:'joyce', text:"最近還好嗎？聽說你們部門最近有點亂"}],
+        choices:[
+          { label:"打探消息", sent:"還好啦，就是資訊有點不對稱。你們那邊有聽到什麼嗎？", fx:{ext:10},
+            steps:[{type:'msg', speaker:'joyce', text:"我聽 David 提過一句，說你們老闆最近壓力很大，數字被盯得很緊。你要小心，如果你要說什麼，找對的人說，不要在辦公室裡說。"}] },
+          { label:"純聊天，不打探", sent:"還好，就是一般的忙。你呢？", fx:{ext:5},
+            steps:[{type:'msg', speaker:'joyce', text:"我也是，Q3 結案季，忙翻了。"}] }
+        ] },
+      { day:90, contact:'joyce', noChoice:true,
+        incoming:[
+          {speaker:'joyce', text:"Alex 最近怎樣？"},
+          {side:'me', text:"照舊。"},
+          {speaker:'joyce', text:"哈"},
+          {narration:"你活在一個平行世界裡。表面上你是 MKT team 的一員，但真實資訊來源是一張隱形的網。"}
+        ] }
+    ];
+  }
+  if(route === 'C'){
+    return [
+      { day:42, contact:'trio', noChoice:false,
+        incoming:[{narration:"下一次 team meeting，你和 Leo、Tom 把「process improvement」提案帶了上去。"}],
+        choices:[
+          { label:"由你主提", dm:{contact:'alex'}, sent:"我們想提一個小建議——如果每次有方向性的討論，可以留一份 shared meeting notes，這樣大家都能跟上最新的 context，減少重工。", fx:{wary:10},
+            steps:[{type:'msg', speaker:'alex', text:"⋯⋯這個 make sense，我請 Ken 開始弄一份 shared doc。"}] },
+          { label:"讓 Leo 主提，你補充", sent:"（讓 Leo 開頭，你在旁邊補充數據佐證）", fx:{ally:5},
+            steps:[{type:'msg', speaker:'alex', text:"了解，我們會 follow up。"}] }
+        ] },
+      { day:90, contact:'team', noChoice:true,
+        incoming:[
+          {speaker:'alex', text:"Hi all，FYI 下季方向會偏向 retention campaign。詳細 brief 我今天會丟上來。"},
+          {narration:"比以前多一條 update。不是因為她想通了。是因為她被迫了。"}
+        ] }
+    ];
+  }
+  if(route === 'D'){
+    return [
+      { day:43, contact:'tom', noChoice:false,
+        incoming:[
+          {speaker:'tom', text:"你今天沒來？"},
+          {side:'me', text:"家裡有事，請了半天。"},
+          {speaker:'tom', text:"嗯"},
+          {speaker:'tom', text:"你是不是在看外面的機會"}
+        ],
+        choices:[
+          { label:"承認", sent:"⋯⋯有在看。", fx:{},
+            steps:[
+              {type:'msg', speaker:'tom', text:"⋯⋯好吧"},
+              {type:'msg', speaker:'tom', text:"我也有想過，但不太敢動"},
+              {type:'msg', speaker:'tom', text:"你如果走了⋯⋯跟我說一聲"}
+            ] },
+          { label:"否認", sent:"沒有啦，真的家裡有事", fx:{},
+            steps:[{type:'msg', speaker:'tom', text:"喔⋯⋯好"}] },
+          { label:"反問", sent:"你呢？", fx:{},
+            steps:[
+              {type:'msg', speaker:'tom', text:"⋯⋯"},
+              {type:'msg', speaker:'tom', text:"我上個月投了十幾份了，沒什麼回覆"},
+              {type:'msg', speaker:'tom', text:"我年紀比你大，不好跳"}
+            ] }
+        ] },
+      { day:60, contact:'alex', sub_override:"你的辭職對話", noChoice:false,
+        incoming:[{speaker:'alex', text:"好可惜！你做得很好的，有什麼我可以做的嗎？"}],
+        choices:[
+          { label:"禮貌回覆", sent:"謝謝 Alex，這段時間學到很多。祝 team 一切順利🙏", fx:{},
+            steps:[{type:'msg', speaker:'alex', text:"你隨時都可以回來！keep in touch 🤗"}] },
+          { label:"什麼都不回", sentIsSilence:true, fx:{},
+            steps:[
+              {type:'narration', text:"[已讀]"},
+              {type:'narration', text:"她沒有追問。你的沉默對她來說，只是一個「不太 social 的人」的正常反應。"}
+            ] },
+          { label:"說一句真話", sent:"謝謝。如果我可以提一個建議的話——可以考慮讓 team 的資訊流通更公開一些。不是每個人都有管道知道方向性的決定。", fx:{},
+            steps:[{type:'msg', speaker:'alex', text:"嗯，謝謝你的 feedback，我會注意的"}] }
+        ] },
+      { day:90, contact:'leo', noChoice:true,
+        incoming:[
+          {speaker:'leo', text:"欸 Tom 也走了"},
+          {speaker:'leo', text:"就剩我跟 Grace"},
+          {speaker:'leo', text:"Ken 被調去另一個 BU"},
+          {speaker:'leo', text:"Alex 最近又找了兩個新人"},
+          {speaker:'leo', text:"然後她又開了一個新的小群組，只有她跟那兩個新人"},
+          {speaker:'leo', text:"一模一樣的模式"},
+          {side:'me', text:"⋯⋯"},
+          {speaker:'leo', text:"你做了正確的選擇"},
+          {narration:"[SYSTEM] 歡迎加入 #team-all！所有成員都在這個頻道裡。"}
+        ] }
+    ];
+  }
+  // Route E（隱藏）
+  return [
+    { day:50, contact:'leadership', sub_override:"轉發的郵件", noChoice:true,
+      incoming:[
+        {narration:"[SYSTEM] Alex Chen 轉發了一封郵件"},
+        {screenshot:"CFO → Alex Chen · Q3 MKT Spend Discrepancy", speaker:'alex',
+          caption:"From: Regional CFO\nTo: Alex Chen\nCC: HK GM, HR Director\nSubject: Q3 MKT Spend Discrepancy — Please clarify by EOD Friday\n\nThe Q3 MKT actual spend in your deck shows $8.2M but Finance records $11M including campaign commitments. Please provide a reconciliation breakdown by EOD Friday.\n\nThis is urgent as it affects the regional consolidation."}
+      ] },
+    { day:50, contact:'alex', sub_override:"你的介入", noChoice:false,
+      incoming:[
+        {side:'me', text:"Alex 我看到 CFO 的 email 了。我之前做 Q3 timeline 的時候，有整理過一版跟 Finance 的 cross-check 數據。如果有用的話，我可以幫忙做 reconciliation breakdown。"},
+        {speaker:'alex', text:"你有？？"},
+        {speaker:'alex', text:"可以 share 給我看嗎"},
+        {speaker:'alex', text:"我現在在 Ken 那邊找不到完整的 source"},
+        {side:'me', text:"我整理一下，預計六點前可以給你一份初版"},
+        {speaker:'alex', text:"太感謝了🙏🙏🙏"},
+        {narration:"（Day 50 當天 18:00）"},
+        {side:'me', text:"做好了，附件是 reconciliation breakdown：\n$2.8M 差異拆成三個 bucket——\n1. Campaign commitments not yet invoiced ($1.2M)\n2. Timing difference on media buy booking ($1.1M)\n3. One misclassified internal cost ($0.5M)\n每行都附 finance reference number"},
+        {speaker:'alex', text:"我看了，非常清楚。"},
+        {speaker:'alex', text:"比我預期的還完整。"},
+        {speaker:'alex', text:"你怎麼會有 finance 那邊的 reference number？"}
+      ],
+      choices:[
+        { label:"安全回答", sent:"之前跟 finance 的 Joyce 合作過一個 cross-team project，留了一些聯繫。", fx:{like:15},
+          steps:[{type:'msg', speaker:'alex', text:"嗯，很好，有 connection 是好事。"}] },
+        { label:"展示自主性", sent:"其實是我自己平時有在跟 finance 那邊 cross-check，因為我知道 marketing spend 的 booking 邏輯容易出差異，我比較 cautious。", fx:{like:20},
+          steps:[
+            {type:'msg', speaker:'alex', text:"哦，你自己會做 cross-check？"},
+            {type:'msg', speaker:'alex', text:"不錯，這個 discipline 很好。"}
+          ] },
+        { label:"坦白一部分", sent:"因為我之前一直不太確定我拿到的 direction 是不是最新的，所以養成了自己跟其他部門 double check 的習慣。算是一種⋯⋯backup 吧。", fx:{like:20},
+          steps:[
+            {type:'msg', speaker:'alex', text:"⋯⋯"},
+            {type:'msg', speaker:'alex', text:"嗯"},
+            {type:'msg', speaker:'alex', text:"我理解"},
+            {type:'msg', speaker:'alex', text:"這份東西救了我，我不知道要怎麼感謝你"},
+            {type:'msg', speaker:'alex', text:"你明天有空嗎？我想跟你聊一下"}
+          ] }
+      ] },
+    { day:51, contact:'alex', sub_override:"第二天的 1-on-1", noChoice:true,
+      incoming:[
+        {speaker:'alex', text:"我昨天想了很久。"},
+        {speaker:'alex', text:"我知道我的溝通方式有問題。"},
+        {speaker:'alex', text:"不是故意的⋯⋯我只是⋯⋯上來之後壓力很大，我傾向跟已經熟的人先 align，然後⋯⋯忘了其他人也需要 context。"},
+        {speaker:'alex', text:"你那份東西⋯⋯如果不是你平時自己做了那些 cross-check⋯⋯我不知道昨天怎麼收場。"},
+        {speaker:'alex', text:"以後⋯⋯有什麼大方向的東西，我直接跟你同步，不用透過 Ken 了。"},
+        {narration:"她沒有把你加入那個三人群組。她沒有改變她對整個 team 的溝通方式。她只是為你開了一條直線。Leo 依然在黑暗裡。Tom 依然在 LinkedIn 上找工作。"}
+      ] },
+    { day:58, contact:'ken', sub_override:"Ken 的反應", noChoice:true,
+      incoming:[
+        {speaker:'ken', text:"最近 Alex 好像⋯⋯蠻直接跟你 sync 的？"},
+        {side:'me', text:"嗯，算是。"},
+        {speaker:'ken', text:"good。"},
+        {speaker:'ken', text:"你比我有種。"}
+      ] },
+    { day:90, contact:'alex', noChoice:true,
+      incoming:[
+        {speaker:'alex', text:"Q4 plan 你覺得 retention 那塊怎麼切？想聽聽你的想法"},
+        {side:'me', text:"我覺得可以分兩條線⋯⋯"}
+      ],
+      interlude:{ contact:'leo', exchange:[ {side:'them', text:"欸 下季方向是什麼？Alex 又沒說。"} ] },
+      afterInterludeNarration:"你知道答案。Leo 不知道。他路過門外，不知道裡面在談什麼。"
+    }
+  ];
+}
+
+/* ============================================================
+   結局文案
+============================================================ */
+const EPILOGUE = "不論你選了哪條路線——\nAlex 依然是你的（或曾經的）老闆。Ken 依然在（或已調走，依然安靜）。公司依然在運作。訊息斷層依然存在於世界上的每一間辦公室。\n\n你改變了嗎？改變了。\n你改變了它嗎？不確定。\n\n但你看見了它。";
+const QUOTE = "「不是你不夠好。是你不在那個群組裡。」";
+
+const endings = {
+  A: { stamp:'neutral', stampLabel:'嫡系路線', title:'路線 A · 進入嫡系圈', last:"Leo DM 你：「下季方向是什麼？Alex 又沒說。」——你知道答案。" },
+  B: { stamp:'restructure', stampLabel:'外部路線', title:'路線 B · 平行資訊網', last:"Joyce DM 你：「Alex 最近怎樣？」——你說「照舊。」" },
+  C: { stamp:'promoted', stampLabel:'直言路線', title:'路線 C · 讓斷層曝光', last:"#mkt-team，Alex 發了一條 update——比以前多一條。" },
+  D: { stamp:'resign', stampLabel:'離開路線', title:'路線 D · 離開', last:"新公司 Slack：歡迎加入 #team-all！所有成員都在這個頻道裡。" },
+  E: { stamp:'hidden', stampLabel:'隱藏 · 被需要的人', title:'路線 E · 成為被需要的人', last:"Alex DM 你問 Q4 意見。同時 Leo DM 你問方向。" }
+};
+
+/* ============================================================
+   DOM 參照
+============================================================ */
+const logEl = document.getElementById('log');
+const choicesEl = document.getElementById('choices');
+const continueWrap = document.getElementById('continueWrap');
+const continueBtn = document.getElementById('continueBtn');
+const dayLabel = document.getElementById('dayLabel');
+const progressFill = document.getElementById('progressFill');
+const topAvatar = document.getElementById('topAvatar');
+const topName = document.getElementById('topName');
+const topSub = document.getElementById('topSub');
+const overlay = document.getElementById('overlay');
+const notifSender = document.getElementById('notifSender');
+const notifTitle = document.getElementById('notifTitle');
+const notifText = document.getElementById('notifText');
+const notifQuote = document.getElementById('notifQuote');
+const notifStamp = document.getElementById('notifStamp');
+const replayBtn = document.getElementById('replayBtn');
+const statsPanel = document.getElementById('statsPanel');
+const lightbox = document.getElementById('lightbox');
+const lightboxCaption = document.getElementById('lightboxCaption');
+
+lightbox.addEventListener('click', ()=> lightbox.classList.remove('show'));
+
+document.querySelectorAll('.sb-item[data-contact]').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    const key = el.getAttribute('data-contact');
+    if(CONTACTS[key]) switchThread(key);
+  });
+});
+
+function updateStatsPanel(){
+  if(playCount < 2){ statsPanel.classList.remove('show'); return; }
+  statsPanel.classList.add('show');
+  const s = state;
+  statsPanel.innerHTML = `
+    <span class="stats-chip">Alex 好感度 ${s.like}</span>
+    <span class="stats-chip">Alex 警惕值 ${s.wary}</span>
+    <span class="stats-chip">Ken 關係 ${s.ken}</span>
+    <span class="stats-chip">團隊同盟值 ${s.ally}</span>
+    <span class="stats-chip">外部人脈 ${s.ext}</span>
+    <span class="stats-chip">無力感 ${s.helpless}</span>
+    <span class="stats-chip">路線傾向 A${routeScore.A} B${routeScore.B} C${routeScore.C} D${routeScore.D}</span>
+  `;
+}
+
+/* ============================================================
+   渲染引擎
+============================================================ */
+function renderMsgDOM(avatarKey, text, side){
+  const c = CONTACTS[avatarKey] || CONTACTS.team;
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + side;
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.style.background = side === 'me' ? '#9AA5B5' : c.color;
+  avatar.textContent = side === 'me' ? '你' : c.initials;
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  meta.innerHTML = side === 'me' ? `<span class="nm">你（${ME_TITLE}）</span>` : `<span class="nm">${c.name}（${c.title}）</span>`;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+  body.appendChild(meta);
+  body.appendChild(bubble);
+  row.appendChild(avatar);
+  row.appendChild(body);
+  logEl.appendChild(row);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function renderReadDOM(names){
+  const div = document.createElement('div');
+  div.className = 'read-receipt';
+  div.textContent = `已讀 by ${names.join('、')}`;
+  logEl.appendChild(div); logEl.scrollTop = logEl.scrollHeight;
+}
+function renderNarrationDOM(text){
+  const div = document.createElement('div');
+  div.className = 'narration';
+  div.textContent = text;
+  logEl.appendChild(div); logEl.scrollTop = logEl.scrollHeight;
+}
+function renderCallDOM(text){
+  const div = document.createElement('div');
+  div.className = 'call-notif';
+  div.innerHTML = `<span class="icon">📞</span>${text}`;
+  logEl.appendChild(div); logEl.scrollTop = logEl.scrollHeight;
+}
+function renderScreenshotDOM(avatarKey, caption, side, fullCaption){
+  const c = CONTACTS[avatarKey] || CONTACTS.team;
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + (side||'them');
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.style.background = c.color;
+  avatar.textContent = c.initials;
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  meta.innerHTML = `<span class="nm">${c.name}（${c.title}）</span>`;
+  const card = document.createElement('div');
+  card.className = 'screenshot-card';
+  card.innerHTML = `<div class="ss-fake">🖼️ 截圖</div><div class="ss-caption">${caption}</div>`;
+  card.onclick = ()=>{ lightboxCaption.textContent = fullCaption || caption; lightbox.classList.add('show'); };
+  body.appendChild(meta); body.appendChild(card);
+  row.appendChild(avatar); row.appendChild(body);
+  logEl.appendChild(row); logEl.scrollTop = logEl.scrollHeight;
+}
+function renderSilenceDOM(){
+  const div = document.createElement('div');
+  div.className = 'silence-pad';
+  div.textContent = '・ ・ ・';
+  logEl.appendChild(div); logEl.scrollTop = logEl.scrollHeight;
+}
+function renderRecord(r){
+  if(r.kind === 'msg') renderMsgDOM(r.avatar, r.text, r.side);
+  else if(r.kind === 'read') renderReadDOM(r.names);
+  else if(r.kind === 'narration') renderNarrationDOM(r.text);
+  else if(r.kind === 'call') renderCallDOM(r.text);
+  else if(r.kind === 'screenshot') renderScreenshotDOM(r.avatar, r.caption, r.side, r.fullCaption);
+  else if(r.kind === 'silence') renderSilenceDOM();
+}
+function pushRecord(threadKey, record){
+  threads[threadKey].push(record);
+  if(threadKey === currentThread){ renderRecord(record); }
+}
+function pushMsg(threadKey, avatarKey, text, side){
+  pushRecord(threadKey, { kind:'msg', avatar:avatarKey, text, side });
+}
+
+function setActiveContact(key){
+  document.querySelectorAll('.sb-item').forEach(el=>el.classList.remove('active'));
+  const c = CONTACTS[key];
+  if(c.sb){ const el = document.getElementById(c.sb); if(el) el.classList.add('active'); }
+  topAvatar.style.background = c.color;
+  topAvatar.textContent = c.initials;
+  topName.textContent = key==='team'||key==='crossdept'||key==='leadership'||key==='trio' ? c.name : `${c.name}（${c.title}）`;
+  topSub.textContent = c.sub;
+}
+
+function switchThread(key, cb){
+  if(key === currentThread){ if(cb) cb(); return; }
+  logEl.classList.add('switching');
+  setTimeout(()=>{
+    currentThread = key;
+    setActiveContact(key);
+    logEl.innerHTML = '';
+    if(threads[key].length){
+      const divider = document.createElement('div');
+      divider.className = 'thread-divider';
+      divider.textContent = `與 ${CONTACTS[key].name} 的對話`;
+      logEl.appendChild(divider);
+    }
+    threads[key].forEach(renderRecord);
+    logEl.scrollTop = logEl.scrollHeight;
+    requestAnimationFrame(()=>{ logEl.classList.remove('switching'); if(cb) cb(); });
+  }, 150);
+}
+
+function randomTypingDelay(){
+  return 3000 + Math.random() * 12000; // 3–15 秒不等，模擬真實回覆速度差異
+}
+
+function addTyping(contactKey){
+  const c = CONTACTS[contactKey] || CONTACTS.team;
+  const row = document.createElement('div');
+  row.className = 'msg-row them typing-row';
+  row.id = 'typingRow';
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.style.background = c.color;
+  avatar.textContent = c.initials;
+  const dots = document.createElement('div');
+  dots.className = 'typing-dots';
+  dots.innerHTML = '<span></span><span></span><span></span>';
+  row.appendChild(avatar); row.appendChild(dots);
+  logEl.appendChild(row); logEl.scrollTop = logEl.scrollHeight;
+}
+function removeTyping(){ const t = document.getElementById('typingRow'); if(t) t.remove(); }
+
+function updateDay(day){
+  dayLabel.textContent = `DAY ${day} / 90`;
+  progressFill.style.width = Math.min(100, (day/90*100)) + '%';
+}
+
+function applyFx(fx, route){
+  if(fx){ for(const k in fx){ state[k] = (state[k]||0) + fx[k]; } }
+  if(route){ routeScore[route] = (routeScore[route]||0) + 1; }
+  updateStatsPanel();
+}
+
+/* ---- 逐項播放 incoming（支援 narration / screenshot / call / 多說話者 / me） ---- */
+function playIncoming(threadKey, items, i, cb){
+  if(i >= items.length){ cb(); return; }
+  const item = items[i];
+
+  if(typeof item === 'string'){
+    addTyping(threadKey);
+    setTimeout(()=>{ removeTyping(); pushMsg(threadKey, threadKey, item, 'them'); setTimeout(()=>playIncoming(threadKey, items, i+1, cb), 380); }, randomTypingDelay());
+    return;
+  }
+  if(item.narration){
+    pushRecord(threadKey, { kind:'narration', text:item.narration });
+    setTimeout(()=>playIncoming(threadKey, items, i+1, cb), 480);
+    return;
+  }
+  if(item.call){
+    pushRecord(threadKey, { kind:'call', text:item.call });
+    setTimeout(()=>playIncoming(threadKey, items, i+1, cb), 480);
+    return;
+  }
+  if(item.screenshot){
+    addTyping(item.speaker || threadKey);
+    setTimeout(()=>{
+      removeTyping();
+      pushRecord(threadKey, { kind:'screenshot', avatar:item.speaker||threadKey, caption:item.screenshot, side:'them', fullCaption:item.caption });
+      setTimeout(()=>playIncoming(threadKey, items, i+1, cb), 400);
+    }, randomTypingDelay());
+    return;
+  }
+  if(item.side === 'me'){
+    pushMsg(threadKey, threadKey, item.text, 'me');
+    setTimeout(()=>playIncoming(threadKey, items, i+1, cb), 420);
+    return;
+  }
+  // {speaker, text}
+  addTyping(item.speaker || threadKey);
+  setTimeout(()=>{
+    removeTyping();
+    pushMsg(threadKey, item.speaker || threadKey, item.text, 'them');
+    setTimeout(()=>playIncoming(threadKey, items, i+1, cb), 380);
+  }, randomTypingDelay());
+}
+
+/* ---- 步驟播放（choice.steps） ---- */
+function runSteps(threadKey, steps, k, doneCb){
+  if(!steps || k >= steps.length){ doneCb(); return; }
+  const st = steps[k];
+  if(st.type === 'narration'){ pushRecord(threadKey, {kind:'narration', text:st.text}); setTimeout(()=>runSteps(threadKey, steps, k+1, doneCb), 550); return; }
+  if(st.type === 'silence'){ pushRecord(threadKey, {kind:'silence'}); setTimeout(()=>runSteps(threadKey, steps, k+1, doneCb), 1600); return; }
+  addTyping(st.speaker || threadKey);
+  setTimeout(()=>{
+    removeTyping();
+    pushMsg(threadKey, st.speaker || threadKey, st.text, 'them');
+    setTimeout(()=>runSteps(threadKey, steps, k+1, doneCb), 380);
+  }, randomTypingDelay());
+}
+
+function renderIncoming(ev, cb){
+  switchThread(ev.contact, ()=>{
+    if(ev.sub_override){ topSub.textContent = ev.sub_override; }
+    updateDay(ev.day);
+    playIncoming(ev.contact, ev.incoming, 0, ()=>{
+      if(ev.readBy){
+        setTimeout(()=>{ pushRecord(ev.contact, {kind:'read', names: ev.readBy}); afterMain(); }, 500);
+      } else { afterMain(); }
+    });
+    function afterMain(){
+      if(ev.interlude){
+        switchThread(ev.interlude.contact, ()=>{
+          let items = ev.interlude.exchange;
+          function step(j){
+            if(j >= items.length){
+              if(ev.afterInterludeNarration){ pushRecord(ev.interlude.contact, {kind:'narration', text:ev.afterInterludeNarration}); }
+              setTimeout(()=> switchThread(ev.contact, cb), 700);
+              return;
+            }
+            const line = items[j];
+            if(line.side === 'them'){
+              addTyping(ev.interlude.contact);
+              setTimeout(()=>{ removeTyping(); pushMsg(ev.interlude.contact, ev.interlude.contact, line.text, 'them'); setTimeout(()=>step(j+1), 380); }, randomTypingDelay());
+            } else {
+              pushMsg(ev.interlude.contact, ev.interlude.contact, line.text, 'me');
+              setTimeout(()=>step(j+1), 420);
+            }
+          }
+          step(0);
+        });
+      } else {
+        cb();
+      }
+    }
+  });
+}
+
+function renderChoices(list, onPick){
+  choicesEl.innerHTML = '';
+  choicesEl.classList.remove('hidden');
+  const prompt = document.createElement('div');
+  prompt.className = 'prompt';
+  prompt.textContent = '選擇你的回應：';
+  choicesEl.appendChild(prompt);
+  list.forEach(choice=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = choice.label;
+    btn.onclick = ()=>{ document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true); onPick(choice); };
+    choicesEl.appendChild(btn);
+  });
+}
+
+function selectChoice(ev, choice){
+  applyFx(choice.fx, choice.route);
+  const targetThread = choice.dm ? choice.dm.contact : ev.contact;
+
+  function doSend(cb){
+    if(choice.sentIsSilence){ pushRecord(targetThread, {kind:'silence'}); }
+    else if(choice.sent){ pushMsg(targetThread, targetThread, choice.sent, 'me'); }
+    if(choice.readByAfterSent){
+      setTimeout(()=>{ pushRecord(targetThread, {kind:'read', names:choice.readByAfterSent}); setTimeout(cb, 400); }, 400);
+    } else {
+      setTimeout(cb, 350);
+    }
+  }
+
+  function afterSteps(){
+    if(choice.subChoices){
+      renderChoices(choice.subChoices, (sc)=>{
+        applyFx(sc.fx, sc.route);
+        pushMsg(ev.contact, ev.contact, sc.sent, 'me');
+        setTimeout(()=>{ runSteps(ev.contact, sc.steps, 0, ()=> finish()); }, 350);
+      });
+      return;
+    }
+    finish();
+  }
+  function finish(){
+    if(choice.dm){ switchThread(ev.contact, showContinue); }
+    else { showContinue(); }
+  }
+
+  function afterSwitch(){
+    doSend(()=>{ runSteps(targetThread, choice.steps, 0, afterSteps); });
+  }
+
+  if(choice.dm){ switchThread(choice.dm.contact, afterSwitch); }
+  else { afterSwitch(); }
+}
+
+function showContinue(){
+  choicesEl.classList.add('hidden');
+  continueWrap.style.display = 'block';
+}
+
+continueBtn.addEventListener('click', ()=>{
+  continueWrap.style.display = 'none';
+  idx++;
+  loadNext();
+});
+
+function determineRoute(){
+  const confronted = routeScore.C > 0;
+  if(!confronted && state.like >= 55 && state.wary <= 5){ return 'E'; }
+  if(routeScore.D >= 2){ return 'D'; }
+  const order = [['A',routeScore.A],['C',routeScore.C],['B',routeScore.B],['D',routeScore.D]];
+  order.sort((a,b)=> b[1]-a[1]);
+  return order[0][1] > 0 ? order[0][0] : 'A';
+}
+
+function loadNext(){
+  if(idx < events.length){
+    const ev = events[idx];
+    renderIncoming(ev, ()=>{
+      if(ev.choices && ev.choices.length){
+        renderChoices(ev.choices, (choice)=> selectChoice(ev, choice));
+      } else {
+        showContinue();
+      }
+    });
+  } else if(!routeDecided){
+    routeDecided = determineRoute();
+    events = events.concat(buildRouteEvents(routeDecided));
+    loadNext();
+  } else {
+    setTimeout(showEnding, 500);
+  }
+}
+
+function showEnding(){
+  const e = endings[routeDecided];
+  notifSender.textContent = e.title;
+  notifTitle.textContent = '90 天後';
+  notifText.textContent = EPILOGUE + '\n\n最後一幕：' + e.last;
+  notifQuote.textContent = QUOTE;
+  notifStamp.textContent = e.stampLabel;
+  notifStamp.className = 'notif-stamp ' + e.stamp;
+  overlay.classList.add('show');
+}
+
+replayBtn.addEventListener('click', ()=>{
+  state = { like:50, wary:0, ken:40, ally:30, ext:0, helpless:0 };
+  routeScore = { A:0, B:0, C:0, D:0 };
+  idx = 0;
+  routeDecided = null;
+  events = commonEvents.slice();
+  playCount++;
+  Object.keys(threads).forEach(k => threads[k] = []);
+  currentThread = null;
+  logEl.innerHTML = '';
+  overlay.classList.remove('show');
+  updateStatsPanel();
+  loadNext();
+});
+
+/* ============================================================
+   啟動
+============================================================ */
+events = commonEvents.slice();
+loadNext();
+</script>
+</body>
+</html>
